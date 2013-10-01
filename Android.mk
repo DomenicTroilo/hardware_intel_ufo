@@ -1,84 +1,126 @@
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := ufo.prop
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
+LOCAL_SRC_FILES := ufo.prop
+include $(BUILD_PREBUILT)
+
+ifeq ($(USE_INTEL_UFO_DRIVER),true)
+
 ifneq ($(BOARD_HAVE_GEN_GFX_SRC),true)
 
-LOCAL_PATH:= $(call my-dir)
-
-UFO_PROJECT_PATH := $(LOCAL_PATH)
-
 include $(CLEAR_VARS)
+LOCAL_COPY_HEADERS_TO := ufo
+LOCAL_COPY_HEADERS := graphics.h
+LOCAL_COPY_HEADERS += gralloc.h
+include $(BUILD_COPY_HEADERS)
 
-LOCAL_MODULE := ufo
-LOCAL_MODULE_TAGS := optional
+# The intersection of the library sets are placed at this level, the rest of
+# the libraries are handled in the board platform make files which should be
+# conditionally included from this file if present.
 
-# libastl - From external/asti, required for building these packages.
-LOCAL_STATIC_LIBRARIES := libastl
-
-# Replace $(BUILD_PHONY_PACKAGE) with a kludge that will generate
-# pre-requisites for the package, particularly $(LOCAL_STATIC_LIBRARIES).
-# Note: Variable "all_libraries" is a build system internal variable.
-
-## include $(BUILD_PHONY_PACKAGE)
-
-# ------------------------------------------------------------------------
-LOCAL_MODULE_CLASS := FAKE
-LOCAL_MODULE_SUFFIX := -timestamp
-
-include $(BUILD_SYSTEM)/binary.mk
-
-$(LOCAL_BUILT_MODULE): $(all_libraries)
-
-$(LOCAL_BUILT_MODULE):
-	$(hide) echo "Fake: $@"
-	$(hide) mkdir -p $(dir $@)
-	$(hide) touch $@
-
-# ------------------------------------------------------------------------
-
-$(LOCAL_INSTALLED_MODULE): $(LOCAL_MODULE)_always_extract
-
-.PHONY: $(LOCAL_MODULE)_always_extract
-
-$(LOCAL_MODULE)_always_extract: PRIVATE_PATH := $(LOCAL_PATH)
-
-$(LOCAL_MODULE)_always_extract:
-	@ echo "$(UFO_PROJECT_PATH): GEN GFX: $@"
-	$(hide) mkdir -p $(dir $@)
-	$(hide) $(PRIVATE_PATH)/dist_install.sh $(PRIVATE_PATH)/dist $(PRODUCT_OUT)
-
-ifeq ($(TARGET_BOARD_PLATFORM),bigcore)
-	$(hide) $(PRIVATE_PATH)/dist_install.sh $(PRIVATE_PATH)/dist_bigcore $(PRODUCT_OUT)
-endif
-
-# ------------------------------------------------------------------------
-
+# Hardware Composer
 include $(CLEAR_VARS)
-
-LOCAL_MODULE := libpavp
-LOCAL_MODULE_TAGS := optional
-
-LOCAL_EXPORT_C_INCLUDE_DIRS += $(UFO_PROJECT_PATH)/include
-
-# Can't use shared_library.mk because it defines target $(linked_module)
-# to be built as a shared library, instead of copied.
-# Can't use prebuilt.mk because it has a dummy export_includes.
-
-# Set things that would be set by shared_library.mk if really building a
-# shared library.
-
+LOCAL_MODULE := hwc.ufo
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
-LOCAL_MODULE_SUFFIX := .so
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw/
+LOCAL_MODULE_STEM := hwcomposer.$(TARGET_BOARD_PLATFORM)
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/hwcomposer$(LOCAL_MODULE_SUFFIX)
+include $(BUILD_PREBUILT)
 
-OVERRIDE_BUILT_MODULE_PATH := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)
+# Hardware Composer Service
+include $(CLEAR_VARS)
+LOCAL_MODULE := libhwcservice_vpg
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)
+LOCAL_MODULE_STEM := libhwcservice
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(LOCAL_MODULE_SUFFIX)
+include $(BUILD_PREBUILT)
 
-# Do not strip, as debug section creation will fail because already stripped.
-LOCAL_STRIP_MODULE := false
+# gralloc
+include $(CLEAR_VARS)
+LOCAL_MODULE := gralloc.ufo
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw/
+LOCAL_MODULE_STEM := gralloc.$(TARGET_BOARD_PLATFORM)
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/gralloc$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
 
-include $(BUILD_SYSTEM)/dynamic_binary.mk
+# grallocclient
+include $(CLEAR_VARS)
+LOCAL_MODULE := libgrallocclient
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)
+LOCAL_MODULE_STEM := libgrallocclient
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
 
-$(linked_module): $(UFO_PROJECT_PATH)/dist/system/lib/libpavp.so.xz
-	mkdir -p $(dir $@)
-	xz -d -c $< >$@
-	chmod --reference=$< $@
+# grallocgmm
+include $(CLEAR_VARS)
+LOCAL_MODULE := libgrallocgmm
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)
+LOCAL_MODULE_STEM := libgrallocgmm
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
 
-# ------------------------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE := libvpwrapper_vpg
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)
+LOCAL_MODULE_STEM := libvpwrapper
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
 
-endif # ifneq ($(BOARD_HAVE_GEN_GFX_SRC),true)
+# Driver Loader
+include $(CLEAR_VARS)
+LOCAL_MODULE := libGLES_ufo
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/egl/
+LOCAL_MODULE_STEM := libGLES_intel
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
+
+# Haswell
+include $(CLEAR_VARS)
+LOCAL_MODULE := libGLES_ufo_intel7_5
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/egl/
+LOCAL_MODULE_STEM := libGLES_intel7_5
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
+
+# Ivy Bridge
+# ValleyView
+include $(CLEAR_VARS)
+LOCAL_MODULE := libGLES_ufo_intel7
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/egl/
+LOCAL_MODULE_STEM := libGLES_intel7
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+LOCAL_SRC_FILES := $(TARGET_BOARD_PLATFORM)/$(LOCAL_MODULE_STEM)$(TARGET_SHLIB_SUFFIX)
+include $(BUILD_PREBUILT)
+
+endif # BOARD_HAVE_GEN_GFX_SRC
+
+endif # USE_INTEL_UFO_DRIVER
