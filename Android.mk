@@ -283,6 +283,11 @@ ifneq ($(filter $(TARGET_BOARD_PLATFORM), baytrail),)
 include $(LOCAL_PATH)/baytrail/baytrail.mk
 endif
 
+ifneq ($(filter $(TARGET_BOARD_PLATFORM), ivybridge),)
+# Baytrail specific
+include $(LOCAL_PATH)/ivybridge/ivybridge.mk
+endif
+
 endif # BOARD_HAVE_GEN_GFX_SRC
 
 endif # USE_INTEL_UFO_DRIVER
